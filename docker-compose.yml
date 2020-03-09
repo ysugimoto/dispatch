@@ -1,0 +1,47 @@
+version: "3.4"
+x-restart-policy: &restart_policy
+  restart: unless-stopped
+x-dispatch-defaults: &dispatch_defaults
+  <<: *restart_policy
+  build:
+    context: .
+  image: dispatch-local
+  depends_on:
+    - postgres
+  env_file:
+    - .env
+services:
+  postgres:
+    <<: *restart_policy
+    image: "postgres:9.6"
+    ports:
+      - "5432:5432"
+    volumes:
+      - "dispatch-postgres:/var/lib/postgresql/data"
+    env_file: ./.env
+  web:
+    <<: *dispatch_defaults
+    ports:
+      - 8000:8000
+    volumes:
+      - "./.env:/usr/src/dispatch/src/dispatch/static/.env"
+  dispatch-scheduler:
+    <<: *dispatch_defaults
+  oidc:
+    image: "jboss/keycloak"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      DB_ADDR: "postgres"
+      DB_USER: "postgres"
+      DB_PORT: "5432"
+      DB_PASSWORD: "dispatch"
+      DB_DATABASE: "postgres"
+      KEYCLOAK_USER: "admin"
+      KEYCLOAK_PASSWORD: "admin"
+
+volumes:
+  dispatch-postgres:
+    external: true
