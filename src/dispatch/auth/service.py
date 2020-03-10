@@ -31,7 +31,7 @@ def get_current_user(*, request: Request):
         jwk_key_cache[JWKS_URL] = key
 
     try:
-        data = jwt.decode(token, key)
+        data = jwt.decode(token, key, options={'verify_aud': False})
     except JWTError:
         raise credentials_exception
 
